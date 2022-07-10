@@ -1,16 +1,28 @@
 import Max from '../max'
-import { Message } from 'discord.js'
+import {
+    Message,
+    MessageAttachment,
+    MessageEmbed,
+    MessageOptions,
+} from 'discord.js'
 import { EventEmitter } from 'events'
 
 export class CommandPayload {
     public content: string
     public message: Message
+    public command: string
 
     constructor(msg: Message) {
         this.message = msg
         this.content = msg.content = msg.content.substr(
             process.env.PREFIX.length
         )
+    }
+
+    send(
+        data: string | MessageOptions | MessageEmbed | MessageAttachment
+    ): Promise<Message> {
+        return this.message.channel.send(data)
     }
 }
 
