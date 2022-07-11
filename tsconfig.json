@@ -3,7 +3,6 @@
         "baseUrl": "./src/",
         "outDir": "./dist/",
         "paths": {
-            "@Command": ["./commands/command"],
             "~/*": ["./*"],
             "@/*": ["./*"]
         },
@@ -13,6 +12,8 @@
         "target": "ES2017",
         "allowSyntheticDefaultImports": true,
         "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "resolveJsonModule": true,
         "esModuleInterop": true,
         "allowJs": true,
     },

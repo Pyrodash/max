@@ -1,10 +1,14 @@
+import 'reflect-metadata'
+import 'module-alias/register'
+
+import pkg from '../package.json'
+
 import Max from './max'
 import dotenv from 'dotenv'
-import 'module-alias/register'
 
 dotenv.config()
 console.log(
-    `max ${process.env.npm_package_version} - ${process.env.npm_package_description}\n`
+    `max ${pkg.version} - ${pkg.description}\n`
 )
 
 new Max()

@@ -1,57 +1,69 @@
-import Max from '../max'
-import {
-    Message,
-    MessageAttachment,
-    MessageEmbed,
-    MessageOptions,
-} from 'discord.js'
-import { EventEmitter } from 'events'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export class CommandPayload {
-    public content: string
-    public message: Message
-    public command: string
+import { CommandInteraction } from 'discord.js'
+import { CommandManager } from './manager'
 
-    constructor(msg: Message) {
-        this.message = msg
-        this.content = msg.content = msg.content.substr(
-            process.env.PREFIX.length
-        )
+type CommandHandler = (interaction: CommandInteraction) => void
+
+export interface ICommand {
+    name: string
+    description: string
+    handler: CommandHandler
+}
+
+export function CommandGroup<T extends { new (...args: any[]): object }>(
+    constructor: T
+) {
+    const cls = class extends constructor {
+        [Symbol.toStringTag] = constructor.name
+
+        constructor(...args: any[]) {
+            super(...args)
+            
+            const cmds = getCommands(this)
+            const mgr = CommandManager.instance
+
+            cmds.forEach((cmd) => {
+                mgr.register({
+                    ...cmd,
+                    handler: cmd.handler.bind(this)
+                })
+            })
+        }
     }
 
-    send(
-        data: string | MessageOptions | MessageEmbed | MessageAttachment
-    ): Promise<Message> {
-        return this.message.channel.send(data)
+    Object.defineProperty(cls, 'name', {
+        value: constructor.name
+    })
+
+    return cls
+}
+
+export interface CommandOptions {
+    name?: string
+    description: string
+}
+
+export function Command(options: CommandOptions) {
+    return (
+        target: unknown,
+        propertyKey: string,
+        descriptor: PropertyDescriptor
+    ): void => {
+        if (!options.name) options.name = propertyKey
+
+        const commands: ICommand[] = Reflect.getOwnMetadata('commands', target) || []
+
+        commands.push({
+            name: options.name,
+            description: options.description,
+            handler: descriptor.value,
+        })
+
+        Reflect.defineMetadata('commands', commands, target)
     }
 }
 
-let instance: CommandHandler
-
-export class CommandHandler extends EventEmitter {
-    constructor() {
-        super()
-
-        this.registerEvents()
-    }
-
-    static get(): CommandHandler {
-        return instance || (instance = new CommandHandler())
-    }
-
-    registerEvents(): void {
-        Max.get().client.on('message', (msg: Message) => {
-            if (msg.author.bot) return
-
-            if (msg.content.startsWith(process.env.PREFIX)) {
-                const payload = new CommandPayload(msg)
-
-                this.handleCommand(payload)
-            }
-        })
-    }
-
-    handleCommand(payload: CommandPayload): void {
-        this.emit('command', payload)
-    }
+function getCommands(target: unknown): ICommand[] {
+    return Reflect.getMetadata('commands', target)
 }

@@ -1,30 +1,34 @@
-import { Client } from 'discord.js'
-import Logger from './utils/logger'
+import { Client, Intents } from 'discord.js'
+import { logger } from './utils/logger'
 import ModuleLoader from './loaders/module'
-import { CommandHandler } from './commands'
-
-let instance: Max
+import Config from './config'
+import { CommandManager } from './commands/manager'
+import { REST } from '@discordjs/rest'
 
 export default class Max {
-    public client: Client = new Client()
-    public moduleLoader: ModuleLoader = new ModuleLoader(this)
-    public commandHandler: CommandHandler
+    public client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+
+    public commandMgr = CommandManager.init(this)
+    public moduleLoader = new ModuleLoader(this)
+
+    public readonly rest = new REST({ version: '9' }).setToken(Config.token)
 
     constructor() {
-        instance = this
-
-        this.commandHandler = CommandHandler.get()
         this.registerEvents()
-        this.client.login(process.env.BOT_TOKEN)
-    }
-
-    static get(): Max {
-        return instance || (instance = new Max())
+        
+        this.moduleLoader.onReady(async () => {
+            await this.commandMgr.deploy()
+            await this.client.login(Config.token)
+        })
     }
 
     registerEvents(): void {
+        this.client.on('interactionCreate', async interaction => {
+            this.commandMgr.handle(interaction)
+        })
+
         this.client.on('ready', () => {
-            Logger.write('Max is ready!')
+            logger.info('Max is ready!')
         })
     }
 }

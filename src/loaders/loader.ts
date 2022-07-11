@@ -1,20 +1,16 @@
-import { promises as fs } from 'fs'
+import { logger } from '~/utils/logger'
 import path from 'path'
+import { promises as fs } from 'fs'
 import { EventEmitter } from 'events'
 
 const ALLOWED_FILE_EXTS = ['.ts']
 
 interface ClassOptions {
     instantiate?: boolean
-    params?: Array<any>
-    loadConfig?: boolean
+    params?: Array<unknown>
 }
 
 const defaultClassOptions: ClassOptions = { instantiate: true, params: [] }
-
-interface Logger {
-    write: (text: string) => void
-}
 
 interface LoaderOptions {
     name: string
@@ -24,10 +20,9 @@ interface LoaderOptions {
     ignored?: Array<string>
     autoLoad?: boolean
     classes?: ClassOptions
-    logger: Logger
 }
 
-export default class Loader extends EventEmitter {
+export default class Loader<T> extends EventEmitter {
     private name: string
     private path: string
 
@@ -35,10 +30,9 @@ export default class Loader extends EventEmitter {
     private indexFile: string | ((file: string) => string)
 
     private classes: ClassOptions
-    private logger: Logger
 
     private ignored: Array<string>
-    private files: Array<any>
+    protected files: Array<T>
 
     public ready = false
 
@@ -52,7 +46,6 @@ export default class Loader extends EventEmitter {
         this.indexFile = opts.indexFile || 'index.ts'
 
         this.classes = opts.classes || defaultClassOptions
-        this.logger = opts.logger
 
         this.ignored = opts.ignored || []
         this.files = []
@@ -99,7 +92,7 @@ export default class Loader extends EventEmitter {
         }
     }
 
-    async load(fileName: string): Promise<any> {
+    async load(fileName: string): Promise<T> {
         const filePath = path.join(this.path, fileName)
         let file = await import(filePath)
         let name = this.recursive
@@ -112,18 +105,6 @@ export default class Loader extends EventEmitter {
             cls.__path = filePath
             cls.__directory = path.dirname(filePath)
 
-            if (this.classes.loadConfig) {
-                try {
-                    const config = await import(
-                        path.join(cls.__directory, 'config.json')
-                    )
-
-                    cls.__config = config.default
-                } catch (err) {
-                    cls.__config = {}
-                }
-            }
-
             file = new cls(...this.classes.params)
             name = cls.name
 
@@ -133,8 +114,16 @@ export default class Loader extends EventEmitter {
         this.files.push(file)
         this.emit('loaded file', name)
 
-        if (this.logger) this.logger.write(`Loaded ${this.name} ${name}`)
+        logger.info(`Loaded ${this.name} ${name}`)
 
         return file
+    }
+
+    onReady(cb: () => void) {
+        if(this.ready) {
+            cb()
+        } else {
+            this.once('ready', cb)
+        }
     }
 }
