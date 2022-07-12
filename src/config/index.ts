@@ -10,4 +10,8 @@ export default class Config {
     static get clientId() {
         return process.env.CLIENT_ID
     }
+
+    static get dbName() {
+        return process.env.DB_NAME
+    }
 }
