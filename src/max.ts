@@ -4,7 +4,6 @@ import ModuleLoader from './loaders/module'
 import Config from './config'
 // import mikroConfig from './config/mikro-orm'
 import { CommandManager } from './commands/manager'
-import { REST } from '@discordjs/rest'
 import { MikroORM } from '@mikro-orm/core'
 import { PostgreSqlDriver } from '@mikro-orm/postgresql'
 
@@ -17,11 +16,9 @@ export default class Max {
     public readonly commandMgr = CommandManager.init(this)
     public readonly moduleLoader = new ModuleLoader(this)
 
-    public readonly rest = new REST({ version: '9' }).setToken(Config.token)
     public orm: MikroORM<PostgreSqlDriver>
 
     constructor() {
-        this.registerEvents()
         this.init()
     }
 
@@ -29,8 +26,12 @@ export default class Max {
         // this.orm = await MikroORM.init<PostgreSqlDriver>(mikroConfig)
 
         this.moduleLoader.onReady(async () => {
-            await this.commandMgr.deploy()
             await this.client.login(Config.token)
+            await this.commandMgr.deploy()
+
+            this.registerEvents()
+            
+            logger.info('Max is ready!')
         })
     }
 
@@ -41,10 +42,6 @@ export default class Max {
 
         this.client.on('messageCreate', msg => {
             this.commandMgr.handleMessage(msg)
-        })
-
-        this.client.on('ready', () => {
-            logger.info('Max is ready!')
         })
     }
 }

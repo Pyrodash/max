@@ -1,10 +1,8 @@
 import Max from '~/max'
 import { ICommand } from './'
 import Config from '~/config'
-import { SlashCommandBuilder } from '@discordjs/builders'
-import { Routes } from 'discord-api-types/v9'
 import { logger } from '~/utils/logger'
-import { CommandInteraction, Interaction, Message } from 'discord.js'
+import { ApplicationCommandDataResolvable, CommandInteraction, Interaction, Message } from 'discord.js'
 
 type CommandMap = Map<string, ICommand>
 
@@ -32,17 +30,17 @@ export class CommandManager {
 
     public async deploy() {
         if (this.slashCommands.size > 0) {
-            const commands = Array.from(this.slashCommands.values())
+            const commands: ApplicationCommandDataResolvable[] = Array.from(this.slashCommands.values())
                 .map((cmd) => {
-                    const builder = new SlashCommandBuilder()
-                        .setName(cmd.name)
-                        .setDescription(cmd.description)
-
-                    return builder.toJSON()
+                    return {
+                        name: cmd.name,
+                        description: cmd.description,
+                        options: cmd.options,
+                    }
                 })
             
-            await this.max.rest.put(Routes.applicationCommands(Config.clientId), { body: commands })
-
+            await this.max.client.application.commands.set(commands)
+            
             logger.info('Deployed slash commands')
         }
     }

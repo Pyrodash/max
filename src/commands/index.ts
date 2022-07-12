@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CommandInteraction, Message } from 'discord.js'
+import { ApplicationCommandOptionData, CommandInteraction, Message } from 'discord.js'
 import { CommandManager } from './manager'
 
 type CommandPayload = CommandInteraction | Message
@@ -10,6 +10,7 @@ export interface ICommand {
     name: string
     description: string
     isSlash: boolean
+    options?: ApplicationCommandOptionData[]
     handler: CommandHandler
 }
 
@@ -17,7 +18,8 @@ enum DecoratorType {
     Command,
     Slash,
     Name,
-    Description
+    Description,
+    Option
 }
 
 export function CommandGroup<T extends { new (...args: any[]): object }>(
@@ -79,10 +81,15 @@ function applyCommandMeta(
             }
             break
         case DecoratorType.Name:
-            command.name = value as string
+            command.name = <string>value
             break
         case DecoratorType.Description:
-            command.description = value as string
+            command.description = <string>value
+            break
+        case DecoratorType.Option:
+            if (!command.options) command.options = []
+
+            command.options.push(<ApplicationCommandOptionData>value)
             break
     }
 
@@ -116,6 +123,10 @@ export function Name(value: string) {
 
 export function Description(value: string) {
     return commandMetaFactory(DecoratorType.Description, value)
+}
+
+export function Option(option: ApplicationCommandOptionData) {
+    return commandMetaFactory(DecoratorType.Option, option)
 }
 
 function getCommands(target: unknown): Map<string, ICommand> {
