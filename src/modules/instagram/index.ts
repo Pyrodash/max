@@ -1,11 +1,18 @@
-import { CommandInteraction } from 'discord.js'
-import { Command, CommandGroup } from '~/commands'
+import { CommandInteraction, Message } from 'discord.js'
+import { Command, Slash, CommandGroup, Description, Name } from '~/commands'
 import Module from '../module'
 
 @CommandGroup
 export default class Instagram extends Module {
-    @Command({ description: 'replies with pong!' })
+    @Slash()
+    @Name('ping')
+    @Description('replies with pong!')
     ping(interaction: CommandInteraction) {
         interaction.reply('pong!')
+    }
+
+    @Command({ name: 'ping', description: 'replies with pong!' })
+    pingCmd(msg: Message) {
+        msg.reply('pong!')
     }
 }

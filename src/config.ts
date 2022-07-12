@@ -1,4 +1,8 @@
 export default class Config {
+    static get prefix() {
+        return process.env.PREFIX
+    }
+
     static get token() {
         return process.env.TOKEN
     }

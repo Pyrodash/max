@@ -6,7 +6,10 @@ import { CommandManager } from './commands/manager'
 import { REST } from '@discordjs/rest'
 
 export default class Max {
-    public client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+    public client = new Client({ intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MESSAGES,
+    ] })
 
     public commandMgr = CommandManager.init(this)
     public moduleLoader = new ModuleLoader(this)
@@ -23,8 +26,12 @@ export default class Max {
     }
 
     registerEvents(): void {
-        this.client.on('interactionCreate', async interaction => {
-            this.commandMgr.handle(interaction)
+        this.client.on('interactionCreate', interaction => {
+            this.commandMgr.handleInteraction(interaction)
+        })
+
+        this.client.on('messageCreate', msg => {
+            this.commandMgr.handleMessage(msg)
         })
 
         this.client.on('ready', () => {

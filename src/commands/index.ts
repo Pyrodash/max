@@ -1,14 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CommandInteraction } from 'discord.js'
+import { CommandInteraction, Message } from 'discord.js'
 import { CommandManager } from './manager'
 
-type CommandHandler = (interaction: CommandInteraction) => void
+type CommandPayload = CommandInteraction | Message
+type CommandHandler = (payload: CommandPayload) => void
 
 export interface ICommand {
     name: string
     description: string
+    isSlash: boolean
     handler: CommandHandler
+}
+
+enum DecoratorType {
+    Command,
+    Slash,
+    Name,
+    Description
 }
 
 export function CommandGroup<T extends { new (...args: any[]): object }>(
@@ -41,29 +50,74 @@ export function CommandGroup<T extends { new (...args: any[]): object }>(
 
 export interface CommandOptions {
     name?: string
-    description: string
+    description?: string
 }
 
-export function Command(options: CommandOptions) {
+function applyCommandMeta(
+    type: DecoratorType,
+    value: unknown,
+    target: unknown,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+) {
+    const commands: Map<string, ICommand> = Reflect.getOwnMetadata('commands', target) || new Map()
+
+    let command: ICommand = commands.get(propertyKey) || {
+        name: propertyKey,
+        description: '',
+        isSlash: false,
+        handler: descriptor.value,
+    }
+
+    switch(type) {
+        case DecoratorType.Command:
+        case DecoratorType.Slash:
+            command.isSlash = type === DecoratorType.Slash
+
+            if (typeof value === 'object') {
+                command = { ...command, ...value }
+            }
+            break
+        case DecoratorType.Name:
+            command.name = value as string
+            break
+        case DecoratorType.Description:
+            command.description = value as string
+            break
+    }
+
+    commands.set(propertyKey, command as ICommand)
+
+    Reflect.defineMetadata('commands', commands, target)
+}
+
+function commandMetaFactory(type: DecoratorType, value: unknown) {
     return (
         target: unknown,
         propertyKey: string,
         descriptor: PropertyDescriptor
     ): void => {
-        if (!options.name) options.name = propertyKey
-
-        const commands: ICommand[] = Reflect.getOwnMetadata('commands', target) || []
-
-        commands.push({
-            name: options.name,
-            description: options.description,
-            handler: descriptor.value,
-        })
-
-        Reflect.defineMetadata('commands', commands, target)
+        applyCommandMeta(type, value, target, propertyKey, descriptor)
     }
 }
 
-function getCommands(target: unknown): ICommand[] {
+
+export function Command(options: CommandOptions = {}) {
+    return commandMetaFactory(DecoratorType.Command, options)
+}
+
+export function Slash(options: CommandOptions = {}) {
+    return commandMetaFactory(DecoratorType.Slash, options)
+}
+
+export function Name(value: string) {
+    return commandMetaFactory(DecoratorType.Name, value)
+}
+
+export function Description(value: string) {
+    return commandMetaFactory(DecoratorType.Description, value)
+}
+
+function getCommands(target: unknown): Map<string, ICommand> {
     return Reflect.getMetadata('commands', target)
 }
