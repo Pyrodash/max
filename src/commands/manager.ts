@@ -2,7 +2,12 @@ import Max from '~/max'
 import { ICommand } from './'
 import Config from '~/config'
 import { logger } from '~/utils/logger'
-import { ApplicationCommandDataResolvable, CommandInteraction, Interaction, Message } from 'discord.js'
+import {
+    ApplicationCommandDataResolvable,
+    CommandInteraction,
+    Interaction,
+    Message,
+} from 'discord.js'
 
 type CommandMap = Map<string, ICommand>
 
@@ -30,17 +35,18 @@ export class CommandManager {
 
     public async deploy() {
         if (this.slashCommands.size > 0) {
-            const commands: ApplicationCommandDataResolvable[] = Array.from(this.slashCommands.values())
-                .map((cmd) => {
-                    return {
-                        name: cmd.name,
-                        description: cmd.description,
-                        options: cmd.options,
-                    }
-                })
-            
+            const commands: ApplicationCommandDataResolvable[] = Array.from(
+                this.slashCommands.values()
+            ).map((cmd) => {
+                return {
+                    name: cmd.name,
+                    description: cmd.description,
+                    options: cmd.options,
+                }
+            })
+
             await this.max.client.application.commands.set(commands)
-            
+
             logger.info('Deployed slash commands')
         }
     }

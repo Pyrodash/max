@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ApplicationCommandOptionData, CommandInteraction, Message } from 'discord.js'
+import {
+    ApplicationCommandOptionData,
+    CommandInteraction,
+    Message,
+} from 'discord.js'
 import { CommandManager } from './manager'
 
 type CommandPayload = CommandInteraction | Message
@@ -19,7 +23,7 @@ enum DecoratorType {
     Slash,
     Name,
     Description,
-    Option
+    Option,
 }
 
 export function CommandGroup<T extends { new (...args: any[]): object }>(
@@ -30,21 +34,21 @@ export function CommandGroup<T extends { new (...args: any[]): object }>(
 
         constructor(...args: any[]) {
             super(...args)
-            
+
             const cmds = getCommands(this)
             const mgr = CommandManager.instance
 
             cmds.forEach((cmd) => {
                 mgr.register({
                     ...cmd,
-                    handler: cmd.handler.bind(this)
+                    handler: cmd.handler.bind(this),
                 })
             })
         }
     }
 
     Object.defineProperty(cls, 'name', {
-        value: constructor.name
+        value: constructor.name,
     })
 
     return cls
@@ -62,7 +66,8 @@ function applyCommandMeta(
     propertyKey: string,
     descriptor: PropertyDescriptor
 ) {
-    const commands: Map<string, ICommand> = Reflect.getOwnMetadata('commands', target) || new Map()
+    const commands: Map<string, ICommand> =
+        Reflect.getOwnMetadata('commands', target) || new Map()
 
     let command: ICommand = commands.get(propertyKey) || {
         name: propertyKey,
@@ -71,7 +76,7 @@ function applyCommandMeta(
         handler: descriptor.value,
     }
 
-    switch(type) {
+    switch (type) {
         case DecoratorType.Command:
         case DecoratorType.Slash:
             command.isSlash = type === DecoratorType.Slash
@@ -107,7 +112,6 @@ function commandMetaFactory(type: DecoratorType, value: unknown) {
         applyCommandMeta(type, value, target, propertyKey, descriptor)
     }
 }
-
 
 export function Command(options: CommandOptions = {}) {
     return commandMetaFactory(DecoratorType.Command, options)

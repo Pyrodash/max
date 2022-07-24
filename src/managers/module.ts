@@ -1,18 +1,17 @@
-import Loader from './Loader'
+import path from 'path'
+import { Loader } from '@pyrodash/file-loader'
 import Module from '../modules/module'
 import Max from '../max'
-import path from 'path'
 
-export default class ModuleLoader extends Loader<Module> {
-    get modules(): readonly Module[] {
-        return this.files
+export default class ModuleManager extends Loader<Module> {
+    get modules(): IterableIterator<Module> {
+        return this.files.values()
     }
 
     constructor(max: Max) {
         super({
-            name: 'module',
             path: path.join(__dirname, '..', 'modules'),
-            recursive: true,
+            nested: true,
             classes: {
                 instantiate: true,
                 params: [max],

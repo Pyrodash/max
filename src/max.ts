@@ -1,6 +1,6 @@
 import { Client, Intents } from 'discord.js'
 import { logger } from './utils/logger'
-import ModuleLoader from './loaders/module'
+import ModuleLoader from './managers/module'
 import Config from './config'
 // import mikroConfig from './config/mikro-orm'
 import { CommandManager } from './commands/manager'
@@ -8,10 +8,9 @@ import { MikroORM } from '@mikro-orm/core'
 import { PostgreSqlDriver } from '@mikro-orm/postgresql'
 
 export default class Max {
-    public client = new Client({ intents: [
-        Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES,
-    ] })
+    public client = new Client({
+        intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+    })
 
     public readonly commandMgr = CommandManager.init(this)
     public readonly moduleLoader = new ModuleLoader(this)
@@ -30,17 +29,17 @@ export default class Max {
             await this.commandMgr.deploy()
 
             this.registerEvents()
-            
+
             logger.info('Max is ready!')
         })
     }
 
     private registerEvents(): void {
-        this.client.on('interactionCreate', interaction => {
+        this.client.on('interactionCreate', (interaction) => {
             this.commandMgr.handleInteraction(interaction)
         })
 
-        this.client.on('messageCreate', msg => {
+        this.client.on('messageCreate', (msg) => {
             this.commandMgr.handleMessage(msg)
         })
     }
