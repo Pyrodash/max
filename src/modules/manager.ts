@@ -1,6 +1,6 @@
 import path from 'path'
 import { Loader } from '@pyrodash/file-loader'
-import Module from '../modules/module'
+import Module from './module'
 import Max from '../max'
 
 export default class ModuleManager extends Loader<Module> {
@@ -12,9 +12,13 @@ export default class ModuleManager extends Loader<Module> {
         super({
             path: path.join(__dirname, '..', 'modules'),
             nested: true,
+            mainFile: 'index.ts',
             classes: {
                 instantiate: true,
                 params: [max],
+                destroy: (mdl: Module) => {
+                    mdl.destroy()
+                }
             },
         })
     }

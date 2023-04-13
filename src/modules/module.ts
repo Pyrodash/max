@@ -18,4 +18,10 @@ export default class Module extends EventEmitter {
             this.registerEvents()
         }
     }
+
+    protected getEnv(name: string): string | undefined {
+        return process.env[name]
+    }
+
+    destroy(): Promise<void> | void {}
 }

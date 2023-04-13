@@ -1,21 +1,25 @@
-import { Client, Intents } from 'discord.js'
+import { Client, GatewayIntentBits } from 'discord.js'
 import { logger } from './utils/logger'
-import ModuleLoader from './managers/module'
+import ModuleLoader from './modules/manager'
 import Config from './config'
 // import mikroConfig from './config/mikro-orm'
 import { CommandManager } from './commands/manager'
-import { MikroORM } from '@mikro-orm/core'
+// import { MikroORM } from '@mikro-orm/core'
 import { PostgreSqlDriver } from '@mikro-orm/postgresql'
 
 export default class Max {
     public client = new Client({
-        intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+        intents: [
+            GatewayIntentBits.Guilds,
+            GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.GuildVoiceStates,
+        ],
     })
 
     public readonly commandMgr = CommandManager.init(this)
     public readonly moduleLoader = new ModuleLoader(this)
 
-    public orm: MikroORM<PostgreSqlDriver>
+    // public orm: MikroORM<PostgreSqlDriver>
 
     constructor() {
         this.init()

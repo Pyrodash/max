@@ -4,6 +4,7 @@ import {
     ApplicationCommandOptionData,
     CommandInteraction,
     Message,
+    PermissionResolvable,
 } from 'discord.js'
 import { CommandManager } from './manager'
 
@@ -15,7 +16,12 @@ export interface ICommand {
     description: string
     isSlash: boolean
     options?: ApplicationCommandOptionData[]
+    permissions: PermissionResolvable
     handler: CommandHandler
+}
+
+export interface ICommandGroup {
+    prefix?: string
 }
 
 enum DecoratorType {
@@ -26,7 +32,12 @@ enum DecoratorType {
     Option,
 }
 
-export function CommandGroup<T extends { new (...args: any[]): object }>(
+export interface CommandGroupOptions {
+    prefix?: string
+}
+
+function createCommandGroup<T extends { new (...args: any[]): object }>(
+    options: CommandGroupOptions,
     constructor: T
 ) {
     const cls = class extends constructor {
@@ -39,8 +50,13 @@ export function CommandGroup<T extends { new (...args: any[]): object }>(
             const mgr = CommandManager.instance
 
             cmds.forEach((cmd) => {
+                const separator = cmd.isSlash ? '-' : ' '
+
                 mgr.register({
                     ...cmd,
+                    name: options.prefix
+                        ? `${options.prefix}${separator}${cmd.name}`
+                        : cmd.name,
                     handler: cmd.handler.bind(this),
                 })
             })
@@ -51,12 +67,27 @@ export function CommandGroup<T extends { new (...args: any[]): object }>(
         value: constructor.name,
     })
 
+    const cmdGroup: ICommandGroup = {
+        prefix: options.prefix,
+    }
+
+    Reflect.defineMetadata('info', cmdGroup, cls)
+
     return cls
+}
+
+export function CommandGroup(options: CommandGroupOptions = {}) {
+    return function <T extends { new (...args: any[]): object }>(
+        constructor: T
+    ) {
+        return createCommandGroup(options, constructor)
+    }
 }
 
 export interface CommandOptions {
     name?: string
     description?: string
+    permissions?: PermissionResolvable
 }
 
 function applyCommandMeta(
@@ -74,6 +105,7 @@ function applyCommandMeta(
         description: '',
         isSlash: false,
         handler: descriptor.value,
+        permissions: [],
     }
 
     switch (type) {
@@ -135,4 +167,8 @@ export function Option(option: ApplicationCommandOptionData) {
 
 function getCommands(target: unknown): Map<string, ICommand> {
     return Reflect.getMetadata('commands', target)
+}
+
+export function getCommandGroupMetadata(target: unknown): ICommandGroup {
+    return Reflect.getMetadata('info', target)
 }

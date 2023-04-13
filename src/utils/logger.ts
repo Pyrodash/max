@@ -9,11 +9,11 @@ export const logger = winston.createLogger({
     transports: [
         new winston.transports.File({ filename: join(rootPath, 'all.log') }),
     ],
-    exceptionHandlers: [
+    /* exceptionHandlers: [
         new winston.transports.File({
             filename: join(rootPath, 'exceptions.log'),
         }),
-    ],
+    ], */
 })
 
 if (process.env.NODE_ENV !== 'production') {

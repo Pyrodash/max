@@ -58,7 +58,11 @@ export class CommandManager {
         const command = this.slashCommands.get(commandName)
 
         if (command) {
-            command.handler(interaction as CommandInteraction)
+            if (interaction.memberPermissions.has(command.permissions)) {
+                command.handler(interaction as CommandInteraction)
+            } else {
+                interaction.reply('You do not have the sufficient permissions.')
+            }
         }
     }
 
@@ -72,7 +76,9 @@ export class CommandManager {
             const command = this.commands.get(commandName)
 
             if (command) {
-                command.handler(msg)
+                if (msg.member.permissions.has(command.permissions)) {
+                    command.handler(msg)
+                }
             }
         }
     }
